@@ -93,6 +93,41 @@
       display: none; /* Hidden until authenticated */
     }
 
+    /* Tabs System */
+    .tabs-container {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 25px;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 1px;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 12px 20px;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-light);
+      cursor: pointer;
+      transition: var(--transition);
+      border-bottom: 3px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab-btn:hover {
+      color: var(--primary);
+      background-color: rgba(46, 125, 50, 0.04);
+    }
+
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
     /* Stats Overview Cards */
     .stats-grid {
       display: grid;
@@ -142,6 +177,8 @@
       justify-content: space-between;
       align-items: center;
       background-color: #fafbfa;
+      flex-wrap: wrap;
+      gap: 15px;
     }
 
     .card-title-bar h2 {
@@ -154,10 +191,11 @@
       background: transparent;
       border: 1px solid var(--border);
       color: var(--text-light);
-      padding: 6px 12px;
+      padding: 8px 14px;
       border-radius: 6px;
       cursor: pointer;
       font-size: 0.85rem;
+      font-weight: 500;
       transition: var(--transition);
       display: flex;
       align-items: center;
@@ -167,6 +205,46 @@
     .btn-refresh:hover {
       background: var(--primary-light);
       color: var(--primary-dark);
+      border-color: var(--primary);
+    }
+
+    /* Filters Layout */
+    .report-filters {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .filter-input {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      outline: none;
+      min-width: 220px;
+      transition: var(--transition);
+    }
+
+    .filter-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.1);
+    }
+
+    .filter-select {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      outline: none;
+      background-color: white;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .filter-select:focus {
       border-color: var(--primary);
     }
 
@@ -216,6 +294,33 @@
       font-size: 0.8rem;
       border: 1px solid rgba(46,125,50,0.15);
       white-space: nowrap;
+    }
+
+    .badge-status {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      white-space: nowrap;
+      display: inline-block;
+    }
+
+    .badge-approved {
+      background-color: var(--success-light);
+      color: var(--success);
+      border: 1px solid rgba(46, 125, 50, 0.2);
+    }
+
+    .badge-rejected {
+      background-color: var(--error-light);
+      color: var(--error);
+      border: 1px solid rgba(211, 47, 47, 0.2);
+    }
+
+    .badge-pending {
+      background-color: #fffde7;
+      color: #f57f17;
+      border: 1px solid rgba(245, 127, 23, 0.2);
     }
 
     .date-cell {
@@ -547,57 +652,147 @@
 
   <div class="dashboard-container" id="dashboardContainer">
     
-    <!-- Stats Overview Cards -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-title">Pending Approvals</div>
-        <div class="stat-value" id="statPendingCount">0</div>
+    <!-- Tab Navigation Header -->
+    <div class="tabs-container">
+      <button class="tab-btn active" id="tabPending" onclick="switchTab('pending')">📥 Pending Requests</button>
+      <button class="tab-btn" id="tabReports" onclick="switchTab('reports')">📊 Reports & History</button>
+    </div>
+
+    <!-- PENDING REQUESTS VIEW CONTENT -->
+    <div id="pendingView">
+      <!-- Stats Overview Cards (Pending) -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-title">Pending Approvals</div>
+          <div class="stat-value" id="statPendingCount">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Expected cylinders</div>
+          <div class="stat-value" id="statCylindersCount">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Total expected cost</div>
+          <div class="stat-value" id="statExpectedCost">₹0</div>
+        </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-title">Expected cylinders</div>
-        <div class="stat-value" id="statCylindersCount">0</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-title">Total expected cost</div>
-        <div class="stat-value" id="statExpectedCost">₹0</div>
+
+      <!-- Main Pending Requests Card -->
+      <div class="content-card">
+        <div class="card-title-bar">
+          <h2>Pending Cylinder Requests</h2>
+          <button class="btn-refresh" onclick="loadPendingRequests()">
+            🔄 Refresh
+          </button>
+        </div>
+
+        <div class="table-responsive">
+          <table id="requestsTable">
+            <thead>
+              <tr>
+                <th>Request ID</th>
+                <th>Date & Time</th>
+                <th>Employee Details</th>
+                <th>Centre / Branch</th>
+                <th>Cylinder Details</th>
+                <th>Expected Amount</th>
+                <th>Employee Remarks</th>
+                <th>Approved Amount (₹)</th>
+                <th>Admin Remarks</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="requestsTableBody">
+              <!-- Dynamic rows will be inserted here -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState" style="display: none;">
+          <div class="empty-state-icon">🎉</div>
+          <div class="empty-state-text">No pending gas refill requests found!</div>
+        </div>
       </div>
     </div>
 
-    <!-- Main Pending Requests Card -->
-    <div class="content-card">
-      <div class="card-title-bar">
-        <h2>Pending Cylinder Requests</h2>
-        <button class="btn-refresh" onclick="loadPendingRequests()">
-          🔄 Refresh
-        </button>
+    <!-- REPORTS & HISTORY VIEW CONTENT -->
+    <div id="reportsView" style="display: none;">
+      <!-- Stats Overview Cards (Historical) -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-title">Total Requests</div>
+          <div class="stat-value" id="reportStatTotal">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Total Approved</div>
+          <div class="stat-value" id="reportStatApproved">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title">Total Rejected</div>
+          <div class="stat-value" id="reportStatRejected">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-title font-green">Total Spent Amount</div>
+          <div class="stat-value text-green" id="reportStatCost">₹0</div>
+        </div>
       </div>
 
-      <div class="table-responsive">
-        <table id="requestsTable">
-          <thead>
-            <tr>
-              <th>Request ID</th>
-              <th>Date & Time</th>
-              <th>Employee Details</th>
-              <th>Centre / Branch</th>
-              <th>Cylinder Details</th>
-              <th>Expected Amount</th>
-              <th>Employee Remarks</th>
-              <th>Approved Amount (₹)</th>
-              <th>Admin Remarks</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="requestsTableBody">
-            <!-- Dynamic rows will be inserted here -->
-          </tbody>
-        </table>
-      </div>
+      <!-- Main Reports Card -->
+      <div class="content-card">
+        <div class="card-title-bar">
+          <h2>Reports & Refill History</h2>
+          
+          <div class="report-filters">
+            <!-- Search field -->
+            <input type="text" class="filter-input" id="reportSearch" placeholder="Search by Employee, Branch or Request ID..." oninput="filterReports()">
+            
+            <!-- Status dropdown -->
+            <select class="filter-select" id="reportStatusFilter" onchange="filterReports()">
+              <option value="ALL">All Statuses</option>
+              <option value="Pending">Pending</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+            </select>
 
-      <!-- Empty State -->
-      <div class="empty-state" id="emptyState" style="display: none;">
-        <div class="empty-state-icon">🎉</div>
-        <div class="empty-state-text">No pending gas refill requests found!</div>
+            <!-- Refresh Button -->
+            <button class="btn-refresh" onclick="loadAllRequestsReport()">
+              🔄 Refresh
+            </button>
+
+            <!-- CSV Export button -->
+            <button class="btn-refresh" style="background-color: var(--primary); color: white; border-color: var(--primary);" onclick="exportToCSV()">
+              📥 Export CSV
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table id="reportsTable">
+            <thead>
+              <tr>
+                <th>Request ID</th>
+                <th>Date & Time</th>
+                <th>Employee Details</th>
+                <th>Centre / Branch</th>
+                <th>Cylinder Info</th>
+                <th>Status</th>
+                <th>Approved Cost</th>
+                <th>Admin Remarks</th>
+                <th>WhatsApp</th>
+                <th>Action Time</th>
+              </tr>
+            </thead>
+            <tbody id="reportsTableBody">
+              <!-- Historical rows will be rendered here -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="reportsEmptyState" style="display: none;">
+          <div class="empty-state-icon">📂</div>
+          <div class="empty-state-text">No matching historical records found.</div>
+        </div>
       </div>
     </div>
 
@@ -609,6 +804,7 @@
   <script>
     var activePassword = "";
     var currentRequests = [];
+    var allHistoricalRequests = [];
 
     // Check if password exists in session storage on page load
     window.addEventListener('load', function() {
@@ -687,6 +883,30 @@
     }
 
     /**
+     * Tabs control toggler
+     */
+    function switchTab(tabName) {
+      var pendingTab = document.getElementById('tabPending');
+      var reportsTab = document.getElementById('tabReports');
+      var pendingView = document.getElementById('pendingView');
+      var reportsView = document.getElementById('reportsView');
+      
+      if (tabName === 'pending') {
+        pendingTab.classList.add('active');
+        reportsTab.classList.remove('active');
+        pendingView.style.display = 'block';
+        reportsView.style.display = 'none';
+        loadPendingRequests();
+      } else {
+        reportsTab.classList.add('active');
+        pendingTab.classList.remove('active');
+        reportsView.style.display = 'block';
+        pendingView.style.display = 'none';
+        loadAllRequestsReport();
+      }
+    }
+
+    /**
      * Refreshes the pending requests table list
      */
     function loadPendingRequests() {
@@ -717,7 +937,38 @@
     }
 
     /**
-     * Render data array into HTML table
+     * Fetch all records (pending & historical) for report generation
+     */
+    function loadAllRequestsReport() {
+      showGlobalLoader(true, "Loading all history records...");
+      
+      fetch('/api/get-all-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ password: activePassword })
+      })
+      .then(function(response) {
+        return response.json().then(function(data) {
+          showGlobalLoader(false);
+          if (response.ok) {
+            allHistoricalRequests = data || [];
+            renderReports(allHistoricalRequests);
+            showToast("Historical records loaded.");
+          } else {
+            showToast("Failed to load reports: " + (data.message || "Server error"), true);
+          }
+        });
+      })
+      .catch(function(error) {
+        showGlobalLoader(false);
+        showToast("Failed to load reports: " + error.message, true);
+      });
+    }
+
+    /**
+     * Render data array into HTML table (Pending Requests)
      */
     function renderRequests(requests) {
       currentRequests = requests || [];
@@ -797,6 +1048,177 @@
     }
 
     /**
+     * Render Reports table data and summary cards
+     */
+    function renderReports(records) {
+      var tbody = document.getElementById('reportsTableBody');
+      var emptyState = document.getElementById('reportsEmptyState');
+      var table = document.getElementById('reportsTable');
+      
+      tbody.innerHTML = "";
+      
+      // Compute statistics over all records
+      var totalCount = records.length;
+      var approvedCount = 0;
+      var rejectedCount = 0;
+      var totalSpent = 0;
+      
+      records.forEach(function(row) {
+        if (row.status === 'Approved') {
+          approvedCount++;
+          totalSpent += Number(row.approvedAmount) || 0;
+        } else if (row.status === 'Rejected') {
+          rejectedCount++;
+        }
+      });
+      
+      document.getElementById('reportStatTotal').textContent = totalCount;
+      document.getElementById('reportStatApproved').textContent = approvedCount;
+      document.getElementById('reportStatRejected').textContent = rejectedCount;
+      document.getElementById('reportStatCost').textContent = "₹" + totalSpent.toLocaleString('en-IN');
+      
+      if (records.length === 0) {
+        table.style.display = "none";
+        emptyState.style.display = "block";
+        return;
+      }
+      
+      table.style.display = "table";
+      emptyState.style.display = "none";
+      
+      records.forEach(function(req) {
+        var tr = document.createElement('tr');
+        
+        var statusBadgeClass = 'badge-pending';
+        if (req.status === 'Approved') statusBadgeClass = 'badge-approved';
+        if (req.status === 'Rejected') statusBadgeClass = 'badge-rejected';
+        
+        tr.innerHTML = `
+          <td><span class="badge-id">${req.requestId}</span></td>
+          <td class="date-cell">${req.dateTime}</td>
+          <td>
+            <div style="font-weight:600;">${escapeHtml(req.employeeName)}</div>
+            <div class="employee-mobile">${req.employeeMobile}</div>
+          </td>
+          <td>${escapeHtml(req.branch)}</td>
+          <td>
+            <div style="font-weight:500;">${req.cylinderType}</div>
+            <div style="color:var(--text-light); font-size:0.85rem;">Qty: ${req.quantity} (Expected: ₹${req.expectedAmount})</div>
+          </td>
+          <td><span class="badge-status ${statusBadgeClass}">${req.status}</span></td>
+          <td style="font-weight:600;">${req.status === 'Approved' ? '₹' + req.approvedAmount : '-'}</td>
+          <td>
+            <div class="remarks-box" title="${escapeHtml(req.adminRemarks || 'No remarks')}">
+              ${escapeHtml(req.adminRemarks || '-')}
+            </div>
+          </td>
+          <td style="font-size:0.8rem; font-weight:500; color:${req.whatsAppStatus === 'Sent' ? 'var(--success)' : 'var(--text-light)'}">${req.whatsAppStatus}</td>
+          <td class="date-cell">${req.approvalDateTime || '-'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    /**
+     * Handles search & status filter inputs to query historical logs locally
+     */
+    function filterReports() {
+      var query = document.getElementById('reportSearch').value.trim().toLowerCase();
+      var statusFilter = document.getElementById('reportStatusFilter').value;
+      
+      var filtered = allHistoricalRequests.filter(function(row) {
+        var matchesStatus = (statusFilter === 'ALL' || row.status === statusFilter);
+        
+        var matchesQuery = !query || 
+          row.employeeName.toLowerCase().includes(query) ||
+          row.branch.toLowerCase().includes(query) ||
+          row.requestId.toLowerCase().includes(query) ||
+          row.cylinderType.toLowerCase().includes(query);
+          
+        return matchesStatus && matchesQuery;
+      });
+      
+      renderReports(filtered);
+    }
+
+    /**
+     * Export the currently filtered reports data to a spreadsheet (CSV)
+     */
+    function exportToCSV() {
+      if (allHistoricalRequests.length === 0) {
+        showToast("No historical records available to export.", true);
+        return;
+      }
+      
+      // Determine what records to download (matches the current active filter)
+      var query = document.getElementById('reportSearch').value.trim().toLowerCase();
+      var statusFilter = document.getElementById('reportStatusFilter').value;
+      
+      var filtered = allHistoricalRequests.filter(function(row) {
+        var matchesStatus = (statusFilter === 'ALL' || row.status === statusFilter);
+        var matchesQuery = !query || 
+          row.employeeName.toLowerCase().includes(query) ||
+          row.branch.toLowerCase().includes(query) ||
+          row.requestId.toLowerCase().includes(query);
+        return matchesStatus && matchesQuery;
+      });
+
+      if (filtered.length === 0) {
+        showToast("No records match the current filters to export.", true);
+        return;
+      }
+      
+      var headers = [
+        "Request ID", "Submission Date", "Employee Name", "Employee Mobile", 
+        "Branch", "Cylinder Type", "Quantity", "Expected Amount", 
+        "Remarks", "Status", "Approved Amount", "Admin Remarks", 
+        "WhatsApp Delivery", "Action Date"
+      ];
+      
+      var csvRows = [];
+      csvRows.push(headers.join(","));
+      
+      filtered.forEach(function(row) {
+        var values = [
+          row.requestId,
+          row.dateTime,
+          safeCsvValue(row.employeeName),
+          row.employeeMobile,
+          safeCsvValue(row.branch),
+          safeCsvValue(row.cylinderType),
+          row.quantity,
+          row.expectedAmount,
+          safeCsvValue(row.remarks || ""),
+          row.status,
+          row.approvedAmount || "",
+          safeCsvValue(row.adminRemarks || ""),
+          row.whatsAppStatus,
+          row.approvalDateTime || ""
+        ];
+        csvRows.push(values.join(","));
+      });
+      
+      var csvString = csvRows.join("\n");
+      var blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+      var url = URL.createObjectURL(blob);
+      
+      var link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "Gas_Refill_Requests_Report_" + new Date().toISOString().slice(0,10) + ".csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showToast("Report exported successfully as CSV.");
+    }
+
+    function safeCsvValue(val) {
+      if (!val) return '""';
+      var formatted = val.toString().replace(/"/g, '""');
+      return '"' + formatted + '"';
+    }
+
+    /**
      * Send approved or rejected choice to Vercel Serverless backend
      */
     function submitDecision(requestId, status) {
@@ -846,7 +1268,6 @@
      * Removes row from dashboard UI upon approval/rejection completion
      */
     function removeRequestFromTable(requestId) {
-      // Find row and fade it out
       var row = document.getElementById("row-" + requestId);
       if (row) {
         row.style.transition = "all 0.3s ease";
@@ -854,7 +1275,6 @@
         row.style.transform = "translateX(-20px)";
         setTimeout(function() {
           row.remove();
-          // Remove from local array
           currentRequests = currentRequests.filter(function(r) {
             return r.requestId !== requestId;
           });
@@ -890,13 +1310,11 @@
       var toast = document.createElement('div');
       toast.className = 'toast' + (isError ? ' toast-error' : '');
       
-      // Icon selection
       var icon = isError ? '⚠️' : '✓';
       toast.innerHTML = `<span>${icon}</span> <span>${escapeHtml(message)}</span>`;
       
       container.appendChild(toast);
       
-      // Auto-remove after 4 seconds
       setTimeout(function() {
         toast.style.animation = "slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) reverse";
         setTimeout(function() {
