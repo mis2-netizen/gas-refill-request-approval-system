@@ -116,64 +116,43 @@ export default async function handler(req, res) {
   }
 }
 
-/**
- * Sends a WhatsApp notification to Admin Arun using Meta Cloud API
- */
 async function sendAdminWhatsAppNotification(requestId, employeeName, branch, cylinderType, quantity, expectedAmount) {
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
-  const adminTemplateName = process.env.WHATSAPP_ADMIN_TEMPLATE_NAME || 'new_refill_request_admin';
-  const languageCode = process.env.WHATSAPP_LANGUAGE_CODE || 'en';
+  const secret = process.env.WHATSIFY_SECRET || "b26433c6-7cb5-4db0-8ff0-8c200d4cfb98";
+  const account = process.env.WHATSIFY_ACCOUNT || "1742193706259b3921152244c2f76a1b9270dd3b10e3d1642a";
+  const url = "https://whatsify.me/api/send/whatsapp";
+  const recipient = "+918800166247"; // Admin Arun
 
-  if (!phoneNumberId || !accessToken) {
-    console.log('--- WHATSAPP ADMIN NOTIFICATION SIMULATION ---');
-    console.log('To: 918800166247 (Arun)');
-    console.log(`Template: ${adminTemplateName}`);
-    console.log(`Params: [Arun, ${requestId}, ${employeeName}, ${branch}, ${quantity} Kg of ${cylinderType}, ₹${expectedAmount}]`);
-    console.log('----------------------------------------------');
-    return;
-  }
+  const messageText = `*New Gas Refill Request Submitted*
 
-  const apiUrl = `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`;
-  
-  const payload = {
-    messaging_product: "whatsapp",
-    recipient_type: "individual",
-    to: "918800166247",
-    type: "template",
-    template: {
-      name: adminTemplateName,
-      language: {
-        code: languageCode
-      },
-      components: [
-        {
-          type: "body",
-          parameters: [
-            { type: "text", text: "Arun" },
-            { type: "text", text: requestId },
-            { type: "text", text: employeeName },
-            { type: "text", text: branch },
-            { type: "text", text: `${quantity} Kg of ${cylinderType}` },
-            { type: "text", text: `₹${expectedAmount}` }
-          ]
-        }
-      ]
-    }
-  };
+Hello Arun,
+A new gas refill request has been submitted.
+
+*Request ID:* ${requestId}
+*Employee Name:* ${employeeName}
+*Centre/Branch:* ${branch}
+*Cylinder:* ${quantity} Kg (${cylinderType})
+*Expected Amount:* ₹${expectedAmount}
+
+Please log in to the admin panel to approve or reject this request.`;
 
   try {
-    const response = await fetch(apiUrl, {
-      method: 'POST',
+    const payload = new URLSearchParams();
+    payload.append("secret", secret);
+    payload.append("account", account);
+    payload.append("recipient", recipient);
+    payload.append("message", messageText);
+
+    const response = await fetch(url, {
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
+        "Content-Type": "application/x-www-form-urlencoded"
       },
-      body: JSON.stringify(payload)
+      body: payload.toString()
     });
+
     const responseText = await response.text();
-    console.log(`Admin WhatsApp API Response Code: ${response.status} - ${responseText}`);
+    console.log(`Whatsify Admin Notification Response: Status ${response.status} - ${responseText}`);
   } catch (err) {
-    console.error('Error sending WhatsApp notification to admin:', err);
+    console.error('Error sending Whatsify notification to admin:', err);
   }
 }

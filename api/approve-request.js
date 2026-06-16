@@ -105,71 +105,62 @@ export default async function handler(req, res) {
   }
 }
 
-/**
- * Sends a WhatsApp status update notification to the employee using Meta Cloud API
- */
 async function sendWhatsAppMessage(row, status, approvedAmount, adminRemarks) {
+  const secret = process.env.WHATSIFY_SECRET || "b26433c6-7cb5-4db0-8ff0-8c200d4cfb98";
+  const account = process.env.WHATSIFY_ACCOUNT || "1742193706259b3921152244c2f76a1b9270dd3b10e3d1642a";
+  const url = "https://whatsify.me/api/send/whatsapp";
+
   let digits = row.employee_mobile.toString().replace(/\D/g, '');
   if (digits.length === 10) {
-    digits = '91' + digits;
+    digits = '+91' + digits;
+  } else if (digits.startsWith('91') && digits.length === 12) {
+    digits = '+' + digits;
+  } else if (!digits.startsWith('+')) {
+    digits = '+91' + digits;
   }
 
-  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
-  const templateName = process.env.WHATSAPP_TEMPLATE_NAME || 'gas_refill_status_update';
-  const languageCode = process.env.WHATSAPP_LANGUAGE_CODE || 'en';
+  const messageText = `*Gas Refill Request Status Update*
 
-  if (!phoneNumberId || !accessToken) {
-    console.log('--- WHATSAPP EMPLOYEE NOTIFICATION SIMULATION ---');
-    console.log(`To: ${digits}`);
-    console.log(`Template: ${templateName}`);
-    console.log(`Params: [${row.employee_name}, ${row.request_id}, ${status}, ${status === 'Approved' ? '₹' + approvedAmount : 'N/A'}, ${adminRemarks || 'None'}]`);
-    console.log('-------------------------------------------------');
-    return 'Simulated (Meta Credentials Missing)';
-  }
+Hello ${row.employee_name},
+Your gas refill request has been reviewed.
 
-  const apiUrl = `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`;
-  
-  const payload = {
-    messaging_product: "whatsapp",
-    recipient_type: "individual",
-    to: digits,
-    type: "template",
-    template: {
-      name: templateName,
-      language: {
-        code: languageCode
+*Request ID:* ${row.request_id}
+*Status:* ${status}
+*Approved Amount:* ${status === 'Approved' ? '₹' + approvedAmount : 'N/A'}
+*Admin Remarks:* ${adminRemarks || 'None'}
+
+Thank you.`;
+
+  try {
+    const payload = new URLSearchParams();
+    payload.append("secret", secret);
+    payload.append("account", account);
+    payload.append("recipient", digits);
+    payload.append("message", messageText);
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded"
       },
-      components: [
-        {
-          type: "body",
-          parameters: [
-            { type: "text", text: row.employee_name },
-            { type: "text", text: row.request_id },
-            { type: "text", text: status },
-            { type: "text", text: status === 'Approved' ? '₹' + approvedAmount : 'N/A' },
-            { type: "text", text: adminRemarks || 'None' }
-          ]
-        }
-      ]
+      body: payload.toString()
+    });
+
+    const responseText = await response.text();
+    console.log(`Whatsify Employee Notification Response: Status ${response.status} - ${responseText}`);
+
+    if (response.ok) {
+      const jsonRes = JSON.parse(responseText);
+      if (jsonRes.status === 200 || jsonRes.status === "200" || jsonRes.success === true) {
+        return 'Sent';
+      } else {
+        return `Failed: ${jsonRes.message || 'Error'}`;
+      }
+    } else {
+      return `Failed (HTTP ${response.status})`;
     }
-  };
-
-  const response = await fetch(apiUrl, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  });
-
-  const responseText = await response.text();
-  console.log(`WhatsApp Meta API Response Code: ${response.status} - ${responseText}`);
-
-  if (response.ok) {
-    return 'Sent';
-  } else {
-    return `Failed (HTTP ${response.status})`;
+  } catch (err) {
+    console.error('Error sending Whatsify notification to employee:', err);
+    return `Failed: ${err.message || err}`;
   }
 }
