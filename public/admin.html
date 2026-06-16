@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Gas Refill System</title>
+  <!-- Google Fonts - Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary: #2e7d32;      /* Green Theme */
+      --primary-dark: #1b5e20;
+      --primary-light: #e8f5e9;
+      --bg: #f4f6f4;
+      --surface: #ffffff;
+      --text: #2c3e2f;
+      --text-light: #607262;
+      --border: #d2ded4;
+      --error: #d32f2f;
+      --error-light: #ffebee;
+      --success: #2e7d32;
+      --success-light: #e8f5e9;
+      --shadow: 0 4px 20px rgba(46, 125, 50, 0.05);
+      --radius: 12px;
+      --transition: all 0.2s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      padding: 20px 40px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    header h1 {
+      font-size: 1.4rem;
+      font-weight: 600;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .btn-logout {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: white;
+      padding: 6px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: var(--transition);
+    }
+
+    .btn-logout:hover {
+      background: white;
+      color: var(--primary-dark);
+    }
+
+    /* Main Container */
+    .dashboard-container {
+      flex: 1;
+      padding: 30px 40px;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      display: none; /* Hidden until authenticated */
+    }
+
+    /* Stats Overview Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(46, 125, 50, 0.05);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-title {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* Content Area */
+    .content-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(46, 125, 50, 0.05);
+      overflow: hidden;
+      margin-bottom: 30px;
+    }
+
+    .card-title-bar {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #fafbfa;
+    }
+
+    .card-title-bar h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .btn-refresh {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-light);
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .btn-refresh:hover {
+      background: var(--primary-light);
+      color: var(--primary-dark);
+      border-color: var(--primary);
+    }
+
+    /* Responsive Table Design */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background-color: #f7f9f7;
+      color: var(--text);
+      font-weight: 600;
+      padding: 14px 16px;
+      border-bottom: 2px solid var(--border);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover {
+      background-color: #fcfdfc;
+    }
+
+    .badge-id {
+      background-color: var(--primary-light);
+      color: var(--primary-dark);
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.8rem;
+      border: 1px solid rgba(46,125,50,0.15);
+      white-space: nowrap;
+    }
+
+    .date-cell {
+      white-space: nowrap;
+      color: var(--text-light);
+      font-size: 0.8rem;
+    }
+
+    .employee-mobile {
+      font-size: 0.8rem;
+      color: var(--text-light);
+      margin-top: 3px;
+    }
+
+    .remarks-box {
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: help;
+      color: var(--text-light);
+      font-style: italic;
+    }
+
+    /* Actions Styling inside Table */
+    .input-amount {
+      width: 90px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      outline: none;
+      transition: var(--transition);
+      font-weight: 500;
+    }
+
+    .input-amount:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.1);
+    }
+
+    .input-remarks {
+      width: 130px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 0.85rem;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .input-remarks:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.1);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-table {
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: white;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .btn-approve {
+      background-color: var(--primary);
+    }
+
+    .btn-approve:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    .btn-reject {
+      background-color: var(--error);
+    }
+
+    .btn-reject:hover {
+      background-color: #b71c1c;
+      transform: translateY(-1px);
+    }
+
+    /* Password Modal System */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(44, 62, 47, 0.4);
+      backdrop-filter: blur(5px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 40px 30px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      border: 1px solid var(--border);
+      text-align: center;
+      animation: zoomIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .modal-icon {
+      width: 60px;
+      height: 60px;
+      background-color: var(--primary-light);
+      color: var(--primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin: 0 auto 20px;
+    }
+
+    .modal h2 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .modal p {
+      font-size: 0.9rem;
+      color: var(--text-light);
+      margin-bottom: 24px;
+    }
+
+    .modal-input-group {
+      margin-bottom: 20px;
+    }
+
+    .modal input[type="password"] {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 1rem;
+      outline: none;
+      text-align: center;
+      letter-spacing: 2px;
+      font-family: inherit;
+    }
+
+    .modal input[type="password"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+    }
+
+    .modal-error {
+      color: var(--error);
+      font-size: 0.85rem;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .btn-modal {
+      width: 100%;
+      padding: 12px;
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: var(--transition);
+    }
+
+    .btn-modal:hover {
+      background-color: var(--primary-dark);
+    }
+
+    /* Toast Notification System */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 1100;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      background: var(--surface);
+      border-radius: 8px;
+      padding: 16px 20px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-left: 4px solid var(--primary);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-weight: 500;
+      min-width: 300px;
+      animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .toast.toast-error {
+      border-left-color: var(--error);
+    }
+
+    /* Global Processing Loader Overlay */
+    .global-loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(2px);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .global-spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid var(--primary-light);
+      border-top: 5px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .global-loader-text {
+      font-weight: 600;
+      color: var(--primary-dark);
+      font-size: 1.05rem;
+    }
+
+    /* Empty State */
+    .empty-state {
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--text-light);
+    }
+
+    .empty-state-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      opacity: 0.6;
+    }
+
+    .empty-state-text {
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+
+    /* Animations */
+    @keyframes zoomIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translate3d(30px, 0, 0); }
+      to { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      header {
+        padding: 15px 20px;
+      }
+      .dashboard-container {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Lock Modal / Password Form -->
+  <div id="lockModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-icon">🔒</div>
+      <h2>Admin Authentication</h2>
+      <p>Enter your administrator password to unlock the Approval Dashboard.</p>
+      <form onsubmit="handleLoginSubmit(event)">
+        <div class="modal-input-group">
+          <input type="password" id="adminPasswordInput" placeholder="••••••••" required autofocus>
+          <div id="loginError" class="modal-error">Incorrect password. Please try again.</div>
+        </div>
+        <button type="submit" class="btn-modal" id="loginBtn">Verify Password</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Global Loader Overlay for Updates -->
+  <div id="globalLoader" class="global-loader">
+    <div class="global-spinner"></div>
+    <div class="global-loader-text" id="globalLoaderText">Processing request...</div>
+  </div>
+
+  <!-- Main Admin Interface -->
+  <header>
+    <h1>Gas Refill Request System &mdash; Admin Portal</h1>
+    <div class="header-actions">
+      <button class="btn-logout" onclick="logoutAdmin()">Lock Portal</button>
+    </div>
+  </header>
+
+  <div class="dashboard-container" id="dashboardContainer">
+    
+    <!-- Stats Overview Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-title">Pending Approvals</div>
+        <div class="stat-value" id="statPendingCount">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Expected cylinders</div>
+        <div class="stat-value" id="statCylindersCount">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-title">Total expected cost</div>
+        <div class="stat-value" id="statExpectedCost">₹0</div>
+      </div>
+    </div>
+
+    <!-- Main Pending Requests Card -->
+    <div class="content-card">
+      <div class="card-title-bar">
+        <h2>Pending Cylinder Requests</h2>
+        <button class="btn-refresh" onclick="loadPendingRequests()">
+          🔄 Refresh
+        </button>
+      </div>
+
+      <div class="table-responsive">
+        <table id="requestsTable">
+          <thead>
+            <tr>
+              <th>Request ID</th>
+              <th>Date & Time</th>
+              <th>Employee Details</th>
+              <th>Centre / Branch</th>
+              <th>Cylinder Details</th>
+              <th>Expected Amount</th>
+              <th>Employee Remarks</th>
+              <th>Approved Amount (₹)</th>
+              <th>Admin Remarks</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="requestsTableBody">
+            <!-- Dynamic rows will be inserted here -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" id="emptyState" style="display: none;">
+        <div class="empty-state-icon">🎉</div>
+        <div class="empty-state-text">No pending gas refill requests found!</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Toast Notification Area -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script>
+    var activePassword = "";
+    var currentRequests = [];
+
+    // Check if password exists in session storage on page load
+    window.addEventListener('load', function() {
+      var savedPass = sessionStorage.getItem('gasAdminPass');
+      if (savedPass) {
+        document.getElementById('adminPasswordInput').value = savedPass;
+        authenticate(savedPass);
+      }
+    });
+
+    /**
+     * Submit login / Authentication
+     */
+    function handleLoginSubmit(event) {
+      event.preventDefault();
+      var inputPass = document.getElementById('adminPasswordInput').value.trim();
+      authenticate(inputPass);
+    }
+
+    /**
+     * Authenticate password and download requests list
+     */
+    function authenticate(password) {
+      setLoginBtnLoading(true);
+      document.getElementById('loginError').style.display = 'none';
+
+      // Call Vercel Serverless API get-pending endpoint
+      fetch('/api/get-pending', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ password: password })
+      })
+      .then(function(response) {
+        return response.json().then(function(data) {
+          setLoginBtnLoading(false);
+          if (response.ok) {
+            onAuthSuccess(password, data);
+          } else {
+            onAuthFailure(new Error(data.message || 'Verification failed.'));
+          }
+        });
+      })
+      .catch(function(error) {
+        setLoginBtnLoading(false);
+        onAuthFailure(error);
+      });
+    }
+
+    function setLoginBtnLoading(isLoading) {
+      var btn = document.getElementById('loginBtn');
+      if (isLoading) {
+        btn.disabled = true;
+        btn.textContent = "Verifying...";
+      } else {
+        btn.disabled = false;
+        btn.textContent = "Verify Password";
+      }
+    }
+
+    function onAuthSuccess(password, requests) {
+      activePassword = password;
+      sessionStorage.setItem('gasAdminPass', password);
+      document.getElementById('lockModal').style.display = 'none';
+      document.getElementById('dashboardContainer').style.display = 'block';
+      
+      showToast("Access granted. Logged in successfully.");
+      renderRequests(requests);
+    }
+
+    function onAuthFailure(error) {
+      document.getElementById('loginError').style.display = 'block';
+      document.getElementById('loginError').textContent = "Verification failed: " + error.message;
+      sessionStorage.removeItem('gasAdminPass');
+    }
+
+    /**
+     * Refreshes the pending requests table list
+     */
+    function loadPendingRequests() {
+      showGlobalLoader(true, "Refreshing requests list...");
+      
+      fetch('/api/get-pending', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ password: activePassword })
+      })
+      .then(function(response) {
+        return response.json().then(function(data) {
+          showGlobalLoader(false);
+          if (response.ok) {
+            renderRequests(data);
+            showToast("Pending requests list refreshed.");
+          } else {
+            showToast("Failed to refresh list: " + (data.message || "Server error"), true);
+          }
+        });
+      })
+      .catch(function(error) {
+        showGlobalLoader(false);
+        showToast("Failed to refresh list: " + error.message, true);
+      });
+    }
+
+    /**
+     * Render data array into HTML table
+     */
+    function renderRequests(requests) {
+      currentRequests = requests || [];
+      var tbody = document.getElementById('requestsTableBody');
+      var emptyState = document.getElementById('emptyState');
+      var table = document.getElementById('requestsTable');
+      
+      tbody.innerHTML = "";
+      
+      if (currentRequests.length === 0) {
+        table.style.display = "none";
+        emptyState.style.display = "block";
+        updateStats();
+        return;
+      }
+      
+      table.style.display = "table";
+      emptyState.style.display = "none";
+      
+      currentRequests.forEach(function(req) {
+        var tr = document.createElement('tr');
+        tr.id = "row-" + req.requestId;
+        
+        tr.innerHTML = `
+          <td><span class="badge-id">${req.requestId}</span></td>
+          <td class="date-cell">${req.dateTime}</td>
+          <td>
+            <div style="font-weight:600;">${escapeHtml(req.employeeName)}</div>
+            <div class="employee-mobile">${req.employeeMobile}</div>
+          </td>
+          <td>${escapeHtml(req.branch)}</td>
+          <td>
+            <div style="font-weight:500;">${req.cylinderType}</div>
+            <div style="color:var(--text-light); font-size:0.85rem;">Qty: ${req.quantity}</div>
+          </td>
+          <td style="font-weight: 600;">₹${req.expectedAmount}</td>
+          <td>
+            <div class="remarks-box" title="${escapeHtml(req.remarks || 'No remarks')}">
+              ${escapeHtml(req.remarks || '-')}
+            </div>
+          </td>
+          <td>
+            <input type="number" class="input-amount" id="amt-${req.requestId}" value="${req.expectedAmount}" min="0">
+          </td>
+          <td>
+            <input type="text" class="input-remarks" id="rem-${req.requestId}" placeholder="Add feedback...">
+          </td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn-table btn-approve" onclick="submitDecision('${req.requestId}', 'Approved')">Approve</button>
+              <button class="btn-table btn-reject" onclick="submitDecision('${req.requestId}', 'Rejected')">Reject</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      
+      updateStats();
+    }
+
+    /**
+     * Compute and display statistics summary
+     */
+    function updateStats() {
+      document.getElementById('statPendingCount').textContent = currentRequests.length;
+      
+      var totalCylinders = 0;
+      var totalCost = 0;
+      
+      currentRequests.forEach(function(req) {
+        totalCylinders += Number(req.quantity) || 0;
+        totalCost += Number(req.expectedAmount) || 0;
+      });
+      
+      document.getElementById('statCylindersCount').textContent = totalCylinders;
+      document.getElementById('statExpectedCost').textContent = "₹" + totalCost.toLocaleString('en-IN');
+    }
+
+    /**
+     * Send approved or rejected choice to Vercel Serverless backend
+     */
+    function submitDecision(requestId, status) {
+      var approvedAmount = document.getElementById('amt-' + requestId).value.trim();
+      var adminRemarks = document.getElementById('rem-' + requestId).value.trim();
+      
+      if (status === 'Approved' && (!approvedAmount || Number(approvedAmount) < 0)) {
+        showToast("Please enter a valid approved amount.", true);
+        return;
+      }
+      
+      showGlobalLoader(true, "Updating request status & sending WhatsApp notification...");
+      
+      fetch('/api/approve-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          password: activePassword,
+          requestId: requestId,
+          status: status,
+          approvedAmount: approvedAmount,
+          adminRemarks: adminRemarks,
+          approvedBy: "Admin"
+        })
+      })
+      .then(function(response) {
+        return response.json().then(function(data) {
+          showGlobalLoader(false);
+          if (response.ok && data.success) {
+            removeRequestFromTable(requestId);
+            var actionMsg = status === 'Approved' ? 'approved' : 'rejected';
+            showToast("Request " + actionMsg + " and WhatsApp status: " + data.whatsAppStatus);
+          } else {
+            showToast("Error processing decision: " + (data.message || "Server error"), true);
+          }
+        });
+      })
+      .catch(function(error) {
+        showGlobalLoader(false);
+        showToast("System transmission failed: " + error.message, true);
+      });
+    }
+
+    /**
+     * Removes row from dashboard UI upon approval/rejection completion
+     */
+    function removeRequestFromTable(requestId) {
+      // Find row and fade it out
+      var row = document.getElementById("row-" + requestId);
+      if (row) {
+        row.style.transition = "all 0.3s ease";
+        row.style.opacity = "0";
+        row.style.transform = "translateX(-20px)";
+        setTimeout(function() {
+          row.remove();
+          // Remove from local array
+          currentRequests = currentRequests.filter(function(r) {
+            return r.requestId !== requestId;
+          });
+          updateStats();
+          
+          if (currentRequests.length === 0) {
+            document.getElementById('requestsTable').style.display = "none";
+            document.getElementById('emptyState').style.display = "block";
+          }
+        }, 300);
+      }
+    }
+
+    /**
+     * Show global loading spinner
+     */
+    function showGlobalLoader(show, text) {
+      var loader = document.getElementById('globalLoader');
+      var txtEl = document.getElementById('globalLoaderText');
+      if (show) {
+        if (text) txtEl.textContent = text;
+        loader.style.display = 'flex';
+      } else {
+        loader.style.display = 'none';
+      }
+    }
+
+    /**
+     * Creates and displays alert message toast
+     */
+    function showToast(message, isError) {
+      var container = document.getElementById('toastContainer');
+      var toast = document.createElement('div');
+      toast.className = 'toast' + (isError ? ' toast-error' : '');
+      
+      // Icon selection
+      var icon = isError ? '⚠️' : '✓';
+      toast.innerHTML = `<span>${icon}</span> <span>${escapeHtml(message)}</span>`;
+      
+      container.appendChild(toast);
+      
+      // Auto-remove after 4 seconds
+      setTimeout(function() {
+        toast.style.animation = "slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) reverse";
+        setTimeout(function() {
+          toast.remove();
+        }, 300);
+      }, 4000);
+    }
+
+    /**
+     * Locks portal and destroys credentials
+     */
+    function logoutAdmin() {
+      activePassword = "";
+      sessionStorage.removeItem('gasAdminPass');
+      document.getElementById('adminPasswordInput').value = "";
+      document.getElementById('dashboardContainer').style.display = 'none';
+      document.getElementById('lockModal').style.display = 'flex';
+      showToast("Portal locked. Session cleared.");
+    }
+
+    /**
+     * Utility HTML escape function
+     */
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.toString()
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>

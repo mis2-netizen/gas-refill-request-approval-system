@@ -1,0 +1,9 @@
+{
+  "name": "gas-refill-request-system",
+  "version": "1.0.0",
+  "description": "Gas Refill Request System Web App hosted on Vercel with Supabase backend",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {}
+}

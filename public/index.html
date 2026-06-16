@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gas Refill Request System</title>
+  <!-- Google Fonts - Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary: #2e7d32;      /* Professional Green */
+      --primary-dark: #1b5e20;
+      --primary-light: #e8f5e9;
+      --bg: #f5f8f6;
+      --surface: #ffffff;
+      --text: #2c3e2f;
+      --text-light: #607262;
+      --border: #d2ded4;
+      --error: #d32f2f;
+      --success: #2e7d32;
+      --shadow: 0 10px 30px rgba(46, 125, 50, 0.06);
+      --radius: 12px;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* Outer Wrapper for responsive alignment */
+    .container {
+      width: 100%;
+      max-width: 580px;
+      perspective: 1000px;
+    }
+
+    /* Main Card Layout */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(46, 125, 50, 0.08);
+      overflow: hidden;
+      transition: var(--transition);
+    }
+
+    /* Top Branding Bar */
+    .card-header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      padding: 30px 24px;
+      text-align: center;
+      color: white;
+    }
+
+    .card-header h1 {
+      font-size: 1.6rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .card-header p {
+      font-size: 0.95rem;
+      color: var(--primary-light);
+      font-weight: 300;
+    }
+
+    /* Form Content Styling */
+    .card-body {
+      padding: 32px 28px;
+    }
+
+    /* Progress Indicators (Animations/Spinners) */
+    .loading-container {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid var(--primary-light);
+      border-top: 5px solid var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      color: var(--text-light);
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+
+    /* Success Card States */
+    .success-container {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+      animation: fadeInUp 0.5s ease forwards;
+    }
+
+    .success-icon {
+      width: 72px;
+      height: 72px;
+      background-color: var(--primary-light);
+      color: var(--primary);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 24px;
+    }
+
+    .success-title {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 12px;
+    }
+
+    .success-msg {
+      font-size: 1.05rem;
+      color: var(--text-light);
+      line-height: 1.6;
+      margin-bottom: 30px;
+      padding: 0 10px;
+    }
+
+    .success-id {
+      display: inline-block;
+      background-color: var(--primary-light);
+      color: var(--primary-dark);
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      margin-top: 10px;
+      border: 1px dashed var(--primary);
+    }
+
+    /* Form Fields Grid */
+    .form-grid {
+      display: grid;
+      grid-gap: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-gap: 20px;
+    }
+
+    @media (max-width: 480px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+      .card-body {
+        padding: 24px 20px;
+      }
+    }
+
+    label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+    }
+
+    label::after {
+      content: " *";
+      color: var(--error);
+    }
+
+    label.optional::after {
+      content: "";
+    }
+
+    input, select, textarea {
+      font-family: inherit;
+      font-size: 0.95rem;
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background-color: #fcfdfc;
+      color: var(--text);
+      outline: none;
+      transition: var(--transition);
+      width: 100%;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary);
+      background-color: #ffffff;
+      box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.12);
+    }
+
+    input.error, select.error, textarea.error {
+      border-color: var(--error);
+      background-color: #fff9f9;
+    }
+
+    .error-text {
+      color: var(--error);
+      font-size: 0.8rem;
+      margin-top: 4px;
+      display: none;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    /* Button Styling */
+    .btn {
+      font-family: inherit;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: white;
+      background-color: var(--primary);
+      border: none;
+      padding: 14px 24px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 10px;
+      box-shadow: 0 4px 12px rgba(46, 125, 50, 0.15);
+    }
+
+    .btn:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(46, 125, 50, 0.2);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn-secondary {
+      background-color: #ffffff;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+      box-shadow: none;
+      margin-top: 0;
+    }
+
+    .btn-secondary:hover {
+      background-color: var(--primary-light);
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Brand Footer */
+    .footer {
+      margin-top: 24px;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-light);
+    }
+
+    /* Helper Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translate3d(0, 15px, 0);
+      }
+      to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="card" id="mainCard">
+      <!-- Card Header -->
+      <div class="card-header">
+        <h1>Gas Refill Request System</h1>
+        <p>Submit gas cylinder refill request to admin</p>
+      </div>
+
+      <!-- Card Body / Form -->
+      <div class="card-body">
+        
+        <!-- Submission Loader -->
+        <div id="loadingState" class="loading-container">
+          <div class="spinner"></div>
+          <div class="loading-text">Submitting your request...</div>
+        </div>
+
+        <!-- Success Message -->
+        <div id="successState" class="success-container">
+          <div class="success-icon">✓</div>
+          <h2 class="success-title">Submission Successful</h2>
+          <p class="success-msg" id="successMsg">
+            Your gas refill request has been submitted successfully.<br>
+            <span class="success-id" id="successRequestId">GAS-0000</span>
+          </p>
+          <button class="btn btn-secondary" onclick="resetForm()">Submit Another Request</button>
+        </div>
+
+        <!-- Employee Input Form -->
+        <form id="requestForm" onsubmit="handleFormSubmit(event)" novalidate>
+          <div class="form-grid">
+            
+            <!-- Employee Name -->
+            <div class="form-group">
+              <label for="employeeName">Employee Name</label>
+              <input type="text" id="employeeName" name="employeeName" placeholder="Enter your full name" required>
+              <div class="error-text" id="employeeNameError">Please enter your name</div>
+            </div>
+
+            <!-- Employee Mobile -->
+            <div class="form-group">
+              <label for="employeeMobile">Employee Mobile Number</label>
+              <input type="tel" id="employeeMobile" name="employeeMobile" placeholder="e.g. 9876543210" pattern="^[6-9]\d{9}$" required>
+              <div class="error-text" id="employeeMobileError">Enter a valid 10-digit mobile number</div>
+            </div>
+
+            <!-- Centre / Branch -->
+            <div class="form-group">
+              <label for="branch">Centre / Branch</label>
+              <input type="text" id="branch" name="branch" placeholder="Enter branch/centre name" required>
+              <div class="error-text" id="branchError">Please specify your branch/centre</div>
+            </div>
+
+            <!-- Grid: Cylinder Type & Quantity -->
+            <div class="form-row">
+              <div class="form-group">
+                <label for="cylinderType">Cylinder Type</label>
+                <select id="cylinderType" name="cylinderType" required>
+                  <option value="" disabled selected>Select type</option>
+                  <option value="14.2 kg Domestic">14.2 kg Domestic</option>
+                  <option value="19.0 kg Commercial">19.0 kg Commercial</option>
+                  <option value="5.0 kg Mini">5.0 kg Mini</option>
+                  <option value="47.5 kg Industrial">47.5 kg Industrial</option>
+                </select>
+                <div class="error-text" id="cylinderTypeError">Select cylinder type</div>
+              </div>
+
+              <div class="form-group">
+                <label for="quantity">Quantity</label>
+                <input type="number" id="quantity" name="quantity" min="1" max="100" placeholder="e.g. 1" required>
+                <div class="error-text" id="quantityError">Enter positive quantity</div>
+              </div>
+            </div>
+
+            <!-- Expected Amount -->
+            <div class="form-group">
+              <label for="expectedAmount">Expected Amount (₹)</label>
+              <input type="number" id="expectedAmount" name="expectedAmount" min="1" placeholder="Enter expected amount" required>
+              <div class="error-text" id="expectedAmountError">Enter a valid expected amount</div>
+            </div>
+
+            <!-- Remarks -->
+            <div class="form-group">
+              <label for="remarks" class="optional">Remarks / Special Notes</label>
+              <textarea id="remarks" name="remarks" placeholder="Enter any additional info or special instructions..."></textarea>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn" id="submitBtn">Submit Request</button>
+
+          </div>
+        </form>
+
+      </div>
+    </div>
+    
+    <!-- Footer Branding -->
+    <div class="footer">
+      &copy; 2026 Gas Refill Request System. All rights reserved.
+    </div>
+  </div>
+
+  <script>
+    // Form validation rules
+    function validateField(inputEl, errorEl, customCheck = null) {
+      var isValid = inputEl.checkValidity();
+      if (customCheck) {
+        isValid = isValid && customCheck(inputEl.value);
+      }
+      
+      if (!isValid) {
+        inputEl.classList.add('error');
+        errorEl.style.display = 'block';
+        return false;
+      } else {
+        inputEl.classList.remove('error');
+        errorEl.style.display = 'none';
+        return true;
+      }
+    }
+
+    // Interactive element listeners to remove errors on input
+    document.querySelectorAll('input, select, textarea').forEach(function(el) {
+      el.addEventListener('input', function() {
+        el.classList.remove('error');
+        var errEl = document.getElementById(el.id + 'Error');
+        if (errEl) errEl.style.display = 'none';
+      });
+    });
+
+    /**
+     * Handles front-end submission form submission
+     */
+    function handleFormSubmit(event) {
+      event.preventDefault();
+      
+      // Perform validation checks
+      var isNameValid = validateField(
+        document.getElementById('employeeName'),
+        document.getElementById('employeeNameError')
+      );
+      
+      var isMobileValid = validateField(
+        document.getElementById('employeeMobile'),
+        document.getElementById('employeeMobileError'),
+        function(val) { return /^[6-9]\d{9}$/.test(val); } // 10 digit Indian number pattern
+      );
+      
+      var isBranchValid = validateField(
+        document.getElementById('branch'),
+        document.getElementById('branchError')
+      );
+      
+      var isTypeValid = validateField(
+        document.getElementById('cylinderType'),
+        document.getElementById('cylinderTypeError')
+      );
+      
+      var isQtyValid = validateField(
+        document.getElementById('quantity'),
+        document.getElementById('quantityError'),
+        function(val) { return Number(val) > 0; }
+      );
+      
+      var isAmtValid = validateField(
+        document.getElementById('expectedAmount'),
+        document.getElementById('expectedAmountError'),
+        function(val) { return Number(val) > 0; }
+      );
+
+      // Submit only if all validation tests pass
+      if (isNameValid && isMobileValid && isBranchValid && isTypeValid && isQtyValid && isAmtValid) {
+        showLoading(true);
+        
+        var payload = {
+          employeeName: document.getElementById('employeeName').value.trim(),
+          employeeMobile: document.getElementById('employeeMobile').value.trim(),
+          branch: document.getElementById('branch').value.trim(),
+          cylinderType: document.getElementById('cylinderType').value,
+          quantity: document.getElementById('quantity').value,
+          expectedAmount: document.getElementById('expectedAmount').value,
+          remarks: document.getElementById('remarks').value.trim()
+        };
+
+        // Call Vercel Serverless API submit-request endpoint
+        fetch('/api/submit-request', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        })
+        .then(function(response) {
+          return response.json().then(function(data) {
+            if (response.ok && data.success) {
+              onSubmissionSuccess(data);
+            } else {
+              onSubmissionFailure(new Error(data.message || 'Failed to submit request.'));
+            }
+          });
+        })
+        .catch(function(error) {
+          onSubmissionFailure(error);
+        });
+      }
+    }
+
+    /**
+     * Show/Hide loading spinner State
+     */
+    function showLoading(isLoading) {
+      var form = document.getElementById('requestForm');
+      var loader = document.getElementById('loadingState');
+      if (isLoading) {
+        form.style.display = 'none';
+        loader.style.display = 'block';
+      } else {
+        loader.style.display = 'none';
+      }
+    }
+
+    /**
+     * Submission Success Callback
+     */
+    function onSubmissionSuccess(result) {
+      showLoading(false);
+      if (result && result.success) {
+        document.getElementById('successRequestId').textContent = result.requestId;
+        document.getElementById('successState').style.display = 'block';
+      } else {
+        alert("Submission failed: " + (result ? result.message : "Unknown error"));
+        document.getElementById('requestForm').style.display = 'block';
+      }
+    }
+
+    /**
+     * Submission Error Callback
+     */
+    function onSubmissionFailure(error) {
+      showLoading(false);
+      alert("System connection error: " + error.message);
+      document.getElementById('requestForm').style.display = 'block';
+    }
+
+    /**
+     * Reset the form to submit another request
+     */
+    function resetForm() {
+      document.getElementById('requestForm').reset();
+      document.getElementById('successState').style.display = 'none';
+      document.getElementById('requestForm').style.display = 'block';
+      
+      // Clear all error boundary states
+      document.querySelectorAll('.error').forEach(function(el) {
+        el.classList.remove('error');
+      });
+      document.querySelectorAll('.error-text').forEach(function(el) {
+        el.style.display = 'none';
+      });
+    }
+  </script>
+</body>
+</html>
