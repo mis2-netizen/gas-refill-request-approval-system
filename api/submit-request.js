@@ -142,17 +142,26 @@ Please log in to the admin panel to approve or reject this request.`;
     payload.append("recipient", recipient);
     payload.append("message", messageText);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1500);
+
     const response = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded"
       },
-      body: payload.toString()
+      body: payload.toString(),
+      signal: controller.signal
     });
 
+    clearTimeout(timeoutId);
     const responseText = await response.text();
     console.log(`Whatsify Admin Notification Response: Status ${response.status} - ${responseText}`);
   } catch (err) {
-    console.error('Error sending Whatsify notification to admin:', err);
+    if (err.name === 'AbortError') {
+      console.warn('Whatsify admin notification timed out after 1.5s');
+    } else {
+      console.error('Error sending Whatsify notification to admin:', err);
+    }
   }
 }
