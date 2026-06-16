@@ -140,6 +140,43 @@
       line-height: 1;
     }
 
+    /* SLA / TAT Countdown Badge Styles */
+    .sla-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .plan-time-text {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-light);
+      white-space: nowrap;
+    }
+    .badge-tat {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-align: center;
+      width: fit-content;
+      white-space: nowrap;
+    }
+    .badge-tat-ok {
+      background-color: #e6f4ea;
+      color: #137333;
+    }
+    .badge-tat-overdue {
+      background-color: #fce8e6;
+      color: #c5221f;
+      animation: pulse-red 2s infinite;
+    }
+    @keyframes pulse-red {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.02); box-shadow: 0 0 4px rgba(197, 34, 31, 0.25); }
+      100% { transform: scale(1); }
+    }
+
     /* Stats Overview Cards */
     .stats-grid {
       display: grid;
@@ -705,6 +742,7 @@
               <tr>
                 <th>Request ID</th>
                 <th>Date & Time</th>
+                <th>SLA / TAT</th>
                 <th>Employee Details</th>
                 <th>Centre / Branch</th>
                 <th>Cylinder Details</th>
@@ -1009,6 +1047,7 @@
         tr.innerHTML = `
           <td><span class="badge-id">${req.requestId}</span></td>
           <td class="date-cell">${req.dateTime}</td>
+          <td>${getTatHtml(req.dateTime)}</td>
           <td>
             <div style="font-weight:600;">${escapeHtml(req.employeeName)}</div>
             <div class="employee-mobile">${req.employeeMobile}</div>
@@ -1369,6 +1408,78 @@
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
     }
+
+    /**
+     * Calculates Plan Time and Delay Time HTML
+     */
+    function getTatHtml(dateTimeStr) {
+      var submitTime = new Date(dateTimeStr.replace(/-/g, '/'));
+      var planTime = new Date(submitTime.getTime() + 2 * 60 * 60 * 1000);
+      
+      var hours = planTime.getHours();
+      var minutes = planTime.getMinutes();
+      var ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      var minutesStr = minutes < 10 ? '0' + minutes : minutes;
+      var planTimeFormatted = hours + ':' + minutesStr + ' ' + ampm;
+      
+      var now = new Date();
+      var diffMs = planTime - now;
+      
+      var delayHtml = "";
+      if (diffMs > 0) {
+        var diffMins = Math.floor(diffMs / 60000);
+        var hrs = Math.floor(diffMins / 60);
+        var mins = diffMins % 60;
+        var timeStr = (hrs > 0 ? hrs + "h " : "") + mins + "m left";
+        delayHtml = `<span class="badge-tat badge-tat-ok" data-submit="${dateTimeStr}">${timeStr}</span>`;
+      } else {
+        var overMs = Math.abs(diffMs);
+        var overMins = Math.floor(overMs / 60000);
+        var hrs = Math.floor(overMins / 60);
+        var mins = overMins % 60;
+        var timeStr = "Overdue " + (hrs > 0 ? hrs + "h " : "") + mins + "m";
+        delayHtml = `<span class="badge-tat badge-tat-overdue" data-submit="${dateTimeStr}">${timeStr}</span>`;
+      }
+      
+      return `
+        <div class="sla-cell">
+          <div class="plan-time-text">Plan: ${planTimeFormatted}</div>
+          ${delayHtml}
+        </div>
+      `;
+    }
+
+    // Update Delay countdowns dynamically every 30 seconds
+    setInterval(function() {
+      document.querySelectorAll('.badge-tat').forEach(function(el) {
+        var submitStr = el.getAttribute('data-submit');
+        if (submitStr) {
+          var submitTime = new Date(submitStr.replace(/-/g, '/'));
+          var planTime = new Date(submitTime.getTime() + 2 * 60 * 60 * 1000);
+          var now = new Date();
+          var diffMs = planTime - now;
+          
+          if (diffMs > 0) {
+            var diffMins = Math.floor(diffMs / 60000);
+            var hrs = Math.floor(diffMins / 60);
+            var mins = diffMins % 60;
+            var timeStr = (hrs > 0 ? hrs + "h " : "") + mins + "m left";
+            el.textContent = timeStr;
+            el.className = "badge-tat badge-tat-ok";
+          } else {
+            var overMs = Math.abs(diffMs);
+            var overMins = Math.floor(overMs / 60000);
+            var hrs = Math.floor(overMins / 60);
+            var mins = overMins % 60;
+            var timeStr = "Overdue " + (hrs > 0 ? hrs + "h " : "") + mins + "m";
+            el.textContent = timeStr;
+            el.className = "badge-tat badge-tat-overdue";
+          }
+        }
+      });
+    }, 30000);
   </script>
 </body>
 </html>
