@@ -356,8 +356,8 @@
             <!-- Employee Name (Filtered based on Branch) -->
             <div class="form-group">
               <label for="employeeName">Employee Name</label>
-              <select id="employeeName" name="employeeName" onchange="updateMobileNumber()" required>
-                <option value="" disabled selected>Select Branch First</option>
+              <select id="employeeName" name="employeeName" required>
+                <option value="" disabled selected>Select Employee</option>
               </select>
               <div class="error-text" id="employeeNameError">Please select your name</div>
             </div>
@@ -415,80 +415,35 @@
     <!-- Footer Branding -->
     <div class="footer">
       &copy; 2026 Gas Refill Request System. All rights reserved.
-    </div>
   </div>
 
   <script>
-    // Embedded Active Employee Database (Name, Mobile, Location)
-    var employeesData = [
-      {"Name": "Saiju Areekuzhiyil Chacko", "Mobile Number": "9818220431", "Location": "Siri_Fort_Delhi"},
-      {"Name": "Suresh Kumar", "Mobile Number": "9818249904", "Location": "Mehrauli_Delhi"},
-      {"Name": "Shiji Suresh", "Mobile Number": "9971945327", "Location": "Mehrauli_Delhi"},
-      {"Name": "Kanaka Shaji", "Mobile Number": "9718899355", "Location": "Mehrauli_Delhi"},
-      {"Name": "DR SHARI K", "Mobile Number": "9667857774", "Location": "Mehrauli_Delhi"},
-      {"Name": "Priyanka Yadav", "Mobile Number": "8826899074", "Location": "Siri_Fort_Delhi"},
-      {"Name": "Libin Sabu", "Mobile Number": "8943433621", "Location": "Siri_Fort_Delhi"},
-      {"Name": "Varughese Thomas", "Mobile Number": "8368538320", "Location": "Mehrauli_Delhi"},
-      {"Name": "Lincy Joseph", "Mobile Number": "9605467945", "Location": "Mehrauli_Delhi"},
-      {"Name": "Sruthi K Reghunathan", "Mobile Number": "9599556064", "Location": "Siri_Fort_Delhi"},
-      {"Name": "Jogmaya Rana", "Mobile Number": "9891784336", "Location": "Mehrauli_Delhi"},
-      {"Name": "Gopika S", "Mobile Number": "8089691012", "Location": "Siri_Fort_Delhi"},
-      {"Name": "Sandra Subhash", "Mobile Number": "", "Location": "Mehrauli_Delhi"},
-      {"Name": "Ajeshkumar v", "Mobile Number": "", "Location": "Mehrauli_Delhi"},
-      {"Name": "Dayamani Hum soy", "Mobile Number": "", "Location": "KAC-Gurgaon"},
-      {"Name": "RAJKUMAR", "Mobile Number": "8800095372", "Location": "KAC-Gurgaon"},
-      {"Name": "Vijin", "Mobile Number": "", "Location": "Mehrauli_Delhi"},
-      {"Name": "Koshal", "Mobile Number": "", "Location": "Mehrauli_Delhi"},
-      {"Name": "Naveen kumar", "Mobile Number": "", "Location": "KAC-Gurgaon"},
-      {"Name": "Nisha Singh", "Mobile Number": "", "Location": "Mehrauli_Delhi"},
-      {"Name": "Natasha", "Mobile Number": "", "Location": "KAC-Gurgaon"},
-      {"Name": "Ajesh Mathew", "Mobile Number": "", "Location": "Mehrauli_Delhi"},
-      {"Name": "SUMA B", "Mobile Number": "", "Location": "Mehrauli_Delhi"},
-      {"Name": "SANGITA", "Mobile Number": "", "Location": "Siri_Fort_Delhi"},
-      {"Name": "Aneesha sk", "Mobile Number": "6667771112", "Location": "Mehrauli_Delhi"},
-      {"Name": "Jishnu rajendran", "Mobile Number": "1111111111", "Location": "KAC-Gurgaon"},
-      {"Name": "Syamily. R", "Mobile Number": "1111111111", "Location": "KAC-Gurgaon"},
-      {"Name": "Raj Kumar", "Mobile Number": "8851877171", "Location": "Siri_Fort_Delhi"},
-      {"Name": "Ardhra .p.s", "Mobile Number": "7012443087", "Location": "Mehrauli_Delhi"},
-      {"Name": "Athul krishna Ts", "Mobile Number": "8139815262", "Location": "Mehrauli_Delhi"},
-      {"Name": "Mehak Deep Kaur", "Mobile Number": "1111111111", "Location": "Siri_Fort_Delhi"},
-      {"Name": "Snobin T", "Mobile Number": "9718505408", "Location": "KAC-Gurgaon"},
-      {"Name": "Km pooja", "Mobile Number": "9805395549", "Location": "Mehrauli_Delhi"},
-      {"Name": "Apoorva Singh", "Mobile Number": "9999842423", "Location": "Mehrauli_Delhi"},
-      {"Name": "Anjali (DA)", "Mobile Number": "9289387360", "Location": "Mehrauli_Delhi"},
-      {"Name": "Jineeshbinu", "Mobile Number": "8075510720", "Location": "KAC-Gurgaon"},
-      {"Name": "Soorya. G", "Mobile Number": "9137638301", "Location": "KAC-Gurgaon"},
-      {"Name": "Jyotsna KP", "Mobile Number": "7902691657", "Location": "Mehrauli_Delhi"},
-      {"Name": "Gouthamkrishnan", "Mobile Number": "9074552143", "Location": "Mehrauli_Delhi"},
-      {"Name": "Shijitha c.s", "Mobile Number": "7845643765", "Location": "Mehrauli_Delhi"},
-      {"Name": "Dr.MANJUSHA MOHAN", "Mobile Number": "7428799441", "Location": "Siri_Fort_Delhi"},
-      {"Name": "Archana p", "Mobile Number": "9747680041", "Location": "Siri_Fort_Delhi"},
-      {"Name": "Arundhathi", "Mobile Number": "9289863222", "Location": "Mehrauli_Delhi"},
-      {"Name": "Sourav Biswas", "Mobile Number": "8076595653", "Location": "Mehrauli_Delhi"},
-      {"Name": "Pooja Rana", "Mobile Number": "7849922313", "Location": "Siri_Fort_Delhi"},
-      {"Name": "Hrishika V P", "Mobile Number": "9188467406", "Location": "KAC-Gurgaon"},
-      {"Name": "Manish sharma", "Mobile Number": "8690037042", "Location": "Mehrauli_Delhi"},
-      {"Name": "Arpan", "Mobile Number": "8864939969", "Location": "Siri_Fort_Delhi"},
-      {"Name": "Midhil. M", "Mobile Number": "9947756426", "Location": "KAC-Gurgaon"},
-      {"Name": "Midhun M", "Mobile Number": "9947756426", "Location": "KAC-Gurgaon"},
-      {"Name": "Maya T", "Mobile Number": "9544685496", "Location": "KAC-Gurgaon"},
-      {"Name": "Satheesh S", "Mobile Number": "9990491954", "Location": "Siri_Fort_Delhi"},
-      {"Name": "Ankita Sharma", "Mobile Number": "6260591286", "Location": "Mehrauli_Delhi"},
-      {"Name": "Laurens Nag", "Mobile Number": "7483128967", "Location": "KAC-Gurgaon"},
-      {"Name": "Radhika R", "Mobile Number": "6282995510", "Location": "Siri_Fort_Delhi"},
-      {"Name": "Dileep S", "Mobile Number": "6282357426", "Location": "Siri_Fort_Delhi"},
-      {"Name": "Manisha Arya", "Mobile Number": "7351435581", "Location": "KAC-Gurgaon"},
-      {"Name": "Aleena PK", "Mobile Number": "9048494810", "Location": "Siri_Fort_Delhi"},
-      {"Name": "Adithya. R", "Mobile Number": "8157075475", "Location": "Mehrauli_Delhi"},
-      {"Name": "NIDHIN T V", "Mobile Number": "8086284872", "Location": "KAC-Gurgaon"},
-      {"Name": "Vijayalekshmi. R", "Mobile Number": "9995932698", "Location": "KAC-Gurgaon"},
-      {"Name": "Silpa R S", "Mobile Number": "8137960848", "Location": "KAC-Gurgaon"},
-      {"Name": "Sardinia Pius Kodenkandath", "Mobile Number": "9074320465", "Location": "Mehrauli_Delhi"},
-      {"Name": "Radhul Krishna", "Mobile Number": "8891536427", "Location": "Mehrauli_Delhi"},
-      {"Name": "Godvin nag", "Mobile Number": "7858925732", "Location": "KAC-Gurgaon"},
-      {"Name": "Malu .T", "Mobile Number": "6238602887", "Location": "KAC-Gurgaon"},
-      {"Name": "Sudheesh", "Mobile Number": "8943764893", "Location": "KAC-Gurgaon"}
-    ];
+    var employeesData = [];
+
+    // Fetch active employees dynamically from the serverless API on load
+    window.addEventListener('DOMContentLoaded', function() {
+      fetch('/api/get-employees')
+        .then(function(res) {
+          return res.json();
+        })
+        .then(function(result) {
+          if (result.success && Array.isArray(result.data)) {
+            // Map columns (name, location) to local structure
+            employeesData = result.data.map(function(item) {
+              return {
+                Name: item.name,
+                Location: item.location
+              };
+            });
+            console.log("Loaded " + employeesData.length + " employees dynamically.");
+          } else {
+            console.error("Failed to load employee list:", result.message);
+          }
+        })
+        .catch(function(err) {
+          console.error("Error loading employees:", err);
+        });
+    });
 
     /**
      * Updates employee dropdown based on selected branch/location
@@ -516,25 +471,6 @@
       });
       
       document.getElementById('employeeMobile').value = "";
-    }
-
-    /**
-     * Auto-populates or resets mobile number input on employee name select
-     */
-    function updateMobileNumber() {
-      var selectedEmpName = document.getElementById('employeeName').value;
-      var selectedBranch = document.getElementById('branch').value;
-      var mobileInput = document.getElementById('employeeMobile');
-      
-      var emp = employeesData.find(function(e) {
-        return e.Name === selectedEmpName && e.Location === selectedBranch;
-      });
-      
-      if (emp && emp["Mobile Number"] && emp["Mobile Number"] !== "NA" && emp["Mobile Number"] !== "Na" && emp["Mobile Number"] !== "N/A") {
-        mobileInput.value = emp["Mobile Number"];
-      } else {
-        mobileInput.value = "";
-      }
     }
 
     /**
