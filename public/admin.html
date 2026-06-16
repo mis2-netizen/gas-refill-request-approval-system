@@ -671,7 +671,7 @@
           <div class="stat-value" id="statCylindersCount">0</div>
         </div>
         <div class="stat-card">
-          <div class="stat-title">Total expected cost</div>
+          <div class="stat-title">Total cost</div>
           <div class="stat-value" id="statExpectedCost">₹0</div>
         </div>
       </div>
@@ -694,7 +694,7 @@
                 <th>Employee Details</th>
                 <th>Centre / Branch</th>
                 <th>Cylinder Details</th>
-                <th>Expected Amount</th>
+                <th>Total Amount</th>
                 <th>Employee Remarks</th>
                 <th>Approved Amount (₹)</th>
                 <th>Admin Remarks</th>
@@ -1103,7 +1103,7 @@
           <td>${escapeHtml(req.branch)}</td>
           <td>
             <div style="font-weight:500;">${req.cylinderType}</div>
-            <div style="color:var(--text-light); font-size:0.85rem;">Qty: ${req.quantity} (Expected: ₹${req.expectedAmount})</div>
+            <div style="color:var(--text-light); font-size:0.85rem;">Qty: ${req.quantity} (Total: ₹${req.expectedAmount})</div>
           </td>
           <td><span class="badge-status ${statusBadgeClass}">${req.status}</span></td>
           <td style="font-weight:600;">${req.status === 'Approved' ? '₹' + req.approvedAmount : '-'}</td>
@@ -1170,7 +1170,7 @@
       
       var headers = [
         "Request ID", "Submission Date", "Employee Name", "Employee Mobile", 
-        "Branch", "Cylinder Type", "Quantity", "Expected Amount", 
+        "Branch", "Cylinder Type", "Quantity", "Total Amount", 
         "Remarks", "Status", "Approved Amount", "Admin Remarks", 
         "WhatsApp Delivery", "Action Date"
       ];
