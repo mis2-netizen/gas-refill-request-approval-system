@@ -99,6 +99,9 @@ export default async function handler(req, res) {
       throw new Error(`Failed to insert request: ${errText}`);
     }
 
+    // Notify Admin (Arun) via WhatsApp
+    await sendAdminWhatsAppNotification(requestId, employeeName, branch, cylinderType, quantity, expectedAmount);
+
     return res.status(200).json({
       success: true,
       requestId: requestId
@@ -110,5 +113,67 @@ export default async function handler(req, res) {
       success: false,
       message: error.message || 'Internal Server Error'
     });
+  }
+}
+
+/**
+ * Sends a WhatsApp notification to Admin Arun using Meta Cloud API
+ */
+async function sendAdminWhatsAppNotification(requestId, employeeName, branch, cylinderType, quantity, expectedAmount) {
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  const adminTemplateName = process.env.WHATSAPP_ADMIN_TEMPLATE_NAME || 'new_refill_request_admin';
+  const languageCode = process.env.WHATSAPP_LANGUAGE_CODE || 'en';
+
+  if (!phoneNumberId || !accessToken) {
+    console.log('--- WHATSAPP ADMIN NOTIFICATION SIMULATION ---');
+    console.log('To: 918800166247 (Arun)');
+    console.log(`Template: ${adminTemplateName}`);
+    console.log(`Params: [Arun, ${requestId}, ${employeeName}, ${branch}, ${quantity} Kg of ${cylinderType}, ₹${expectedAmount}]`);
+    console.log('----------------------------------------------');
+    return;
+  }
+
+  const apiUrl = `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`;
+  
+  const payload = {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to: "918800166247",
+    type: "template",
+    template: {
+      name: adminTemplateName,
+      language: {
+        code: languageCode
+      },
+      components: [
+        {
+          type: "body",
+          parameters: [
+            { type: "text", text: "Arun" },
+            { type: "text", text: requestId },
+            { type: "text", text: employeeName },
+            { type: "text", text: branch },
+            { type: "text", text: `${quantity} Kg of ${cylinderType}` },
+            { type: "text", text: `₹${expectedAmount}` }
+          ]
+        }
+      ]
+    }
+  };
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+    const responseText = await response.text();
+    console.log(`Admin WhatsApp API Response Code: ${response.status} - ${responseText}`);
+  } catch (err) {
+    console.error('Error sending WhatsApp notification to admin:', err);
   }
 }

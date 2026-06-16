@@ -365,8 +365,8 @@
             <!-- Employee Mobile (Autofilled based on Name) -->
             <div class="form-group">
               <label for="employeeMobile">Employee Mobile Number</label>
-              <input type="tel" id="employeeMobile" name="employeeMobile" placeholder="e.g. 9876543210" pattern="^[6-9]\d{9}$" required>
-              <div class="error-text" id="employeeMobileError">Enter a valid 10-digit mobile number</div>
+              <input type="text" id="employeeMobile" name="employeeMobile" placeholder="Enter mobile number" required>
+              <div class="error-text" id="employeeMobileError">Please enter a mobile number</div>
             </div>
 
             <!-- Grid: Cylinder Type & Quantity -->
@@ -608,8 +608,7 @@
       
       var isMobileValid = validateField(
         document.getElementById('employeeMobile'),
-        document.getElementById('employeeMobileError'),
-        function(val) { return /^[6-9]\d{9}$/.test(val); }
+        document.getElementById('employeeMobileError')
       );
       
       var isTypeValid = validateField(

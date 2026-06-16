@@ -71,26 +71,10 @@ export default async function handler(req, res) {
 
     const row = updatedRows[0];
 
-    // 2. Draft message template
-    let message = '';
-    if (status === 'Approved') {
-      message = `Dear ${row.employee_name},\n` +
-                `Your gas refill request ${requestId} has been approved.\n` +
-                `Approved Amount: ₹${approvedAmount}\n` +
-                `Centre: ${row.branch}\n` +
-                `Remarks: ${adminRemarks || 'None'}\n` +
-                `Thank you.`;
-    } else {
-      message = `Dear ${row.employee_name},\n` +
-                `Your gas refill request ${requestId} has been rejected.\n` +
-                `Reason: ${adminRemarks || 'No reason specified'}\n` +
-                `Please contact admin for more details.`;
-    }
-
-    // 3. Send WhatsApp notification
+    // 2. Send WhatsApp notification
     let whatsAppStatus = 'Failed';
     try {
-      whatsAppStatus = await sendWhatsAppMessage(row.employee_mobile, message);
+      whatsAppStatus = await sendWhatsAppMessage(row, status, approvedAmount, adminRemarks);
     } catch (wsErr) {
       console.error('WhatsApp dispatch error:', wsErr);
       whatsAppStatus = `Failed: ${wsErr.message || wsErr}`;
@@ -122,46 +106,68 @@ export default async function handler(req, res) {
 }
 
 /**
- * Normalizes Indian mobile number and posts message to API webhook
+ * Sends a WhatsApp status update notification to the employee using Meta Cloud API
  */
-async function sendWhatsAppMessage(mobile, message) {
-  let digits = mobile.toString().replace(/\D/g, '');
+async function sendWhatsAppMessage(row, status, approvedAmount, adminRemarks) {
+  let digits = row.employee_mobile.toString().replace(/\D/g, '');
   if (digits.length === 10) {
     digits = '91' + digits;
   }
 
-  const apiUrl = process.env.WHATSAPP_API_URL;
-  const apiToken = process.env.WHATSAPP_API_TOKEN;
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  const accessToken = process.env.WHATSAPP_ACCESS_TOKEN;
+  const templateName = process.env.WHATSAPP_TEMPLATE_NAME || 'gas_refill_status_update';
+  const languageCode = process.env.WHATSAPP_LANGUAGE_CODE || 'en';
 
-  const isPlaceholderUrl = !apiUrl || apiUrl.includes('PASTE_YOUR_WHATSAPP_API') || apiUrl.trim() === '';
-  const isPlaceholderToken = !apiToken || apiToken.includes('PASTE_YOUR_API_TOKEN') || apiToken.trim() === '';
-
-  if (isPlaceholderUrl || isPlaceholderToken) {
-    console.log('--- WHATSAPP MESSAGE SIMULATION ---');
+  if (!phoneNumberId || !accessToken) {
+    console.log('--- WHATSAPP EMPLOYEE NOTIFICATION SIMULATION ---');
     console.log(`To: ${digits}`);
-    console.log(`Message:\n${message}`);
-    console.log('-----------------------------------');
-    return 'Simulated (API Not Configured)';
+    console.log(`Template: ${templateName}`);
+    console.log(`Params: [${row.employee_name}, ${row.request_id}, ${status}, ${status === 'Approved' ? '₹' + approvedAmount : 'N/A'}, ${adminRemarks || 'None'}]`);
+    console.log('-------------------------------------------------');
+    return 'Simulated (Meta Credentials Missing)';
   }
 
+  const apiUrl = `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`;
+  
   const payload = {
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
     to: digits,
-    message: message
+    type: "template",
+    template: {
+      name: templateName,
+      language: {
+        code: languageCode
+      },
+      components: [
+        {
+          type: "body",
+          parameters: [
+            { type: "text", text: row.employee_name },
+            { type: "text", text: row.request_id },
+            { type: "text", text: status },
+            { type: "text", text: status === 'Approved' ? '₹' + approvedAmount : 'N/A' },
+            { type: "text", text: adminRemarks || 'None' }
+          ]
+        }
+      ]
+    }
   };
 
   const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiToken}`,
+      'Authorization': `Bearer ${accessToken}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify(payload)
   });
 
   const responseText = await response.text();
-  console.log(`WhatsApp API Response Code: ${response.status} - ${responseText}`);
+  console.log(`WhatsApp Meta API Response Code: ${response.status} - ${responseText}`);
 
-  if (response.status >= 200 && response.status < 300) {
+  if (response.ok) {
     return 'Sent';
   } else {
     return `Failed (HTTP ${response.status})`;
