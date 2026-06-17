@@ -80,6 +80,13 @@ export default async function handler(req, res) {
       whatsAppStatus = `Failed: ${wsErr.message || wsErr}`;
     }
 
+    // 3. Sync to Google Sheets
+    try {
+      await syncToGoogleSheets(row);
+    } catch (sheetErr) {
+      console.error('Google Sheets sync error:', sheetErr);
+    }
+
     // 4. Update WhatsApp Status column in Supabase
     await fetch(patchUrl, {
       method: 'PATCH',
@@ -171,5 +178,40 @@ Thank you.`;
     }
     console.error('Error sending Whatsify notification to employee:', err);
     return `Failed: ${err.message || err}`;
+  }
+}
+
+/**
+ * Syncs the approved request data to the Google Sheets Web App
+ */
+async function syncToGoogleSheets(row) {
+  const webAppUrl = process.env.GOOGLE_SHEET_WEBAPP_URL;
+  if (!webAppUrl) {
+    console.log('GOOGLE_SHEET_WEBAPP_URL is not set in environment variables. Skipping Google Sheet sync.');
+    return;
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2500);
+
+    const response = await fetch(webAppUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(row),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
+    const text = await response.text();
+    console.log(`Google Sheets Web App Sync response: Status ${response.status} - ${text}`);
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      console.warn('Google Sheets sync timed out after 2.5s');
+    } else {
+      console.error('Error in Google Sheets sync:', err);
+    }
   }
 }
