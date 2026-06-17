@@ -1283,12 +1283,26 @@
      * Send approved or rejected choice to Vercel Serverless backend
      */
     function submitDecision(requestId, status) {
-      var approvedAmount = document.getElementById('amt-' + requestId).value.trim();
+      var approvedAmount = "";
       var adminRemarks = document.getElementById('rem-' + requestId).value.trim();
       
-      if (status === 'Approved' && (!approvedAmount || Number(approvedAmount) < 0)) {
-        showToast("Please enter a valid approved amount.", true);
-        return;
+      if (status === 'Approved') {
+        var defaultAmount = document.getElementById('amt-' + requestId).value.trim();
+        var userInput = prompt("Enter/Confirm the Approved Amount (₹) for request " + requestId + ":", defaultAmount);
+        
+        // If user cancelled the prompt, abort the entire submission
+        if (userInput === null) {
+          return;
+        }
+        
+        approvedAmount = userInput.trim();
+        if (!approvedAmount || isNaN(approvedAmount) || Number(approvedAmount) < 0) {
+          showToast("Please enter a valid approved amount.", true);
+          return;
+        }
+        
+        // Update input field on the table row with the confirmed amount
+        document.getElementById('amt-' + requestId).value = approvedAmount;
       }
       
       showGlobalLoader(true, "Updating request status & sending WhatsApp notification...");
