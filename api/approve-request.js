@@ -115,7 +115,7 @@ export default async function handler(req, res) {
 async function sendWhatsAppMessage(row, status, approvedAmount, adminRemarks) {
   const secret = process.env.WHATSIFY_SECRET || "b26433c6-7cb5-4db0-8ff0-8c200d4cfb98";
   const account = process.env.WHATSIFY_ACCOUNT || "1742193706259b3921152244c2f76a1b9270dd3b10e3d1642a";
-  const url = "https://whatsify.me/api/send/whatsapp";
+  const url = "https://api.whatsify.me/api/send/whatsapp";
 
   let digits = row.employee_mobile.toString().replace(/\D/g, '');
   if (digits.length === 10) {
@@ -146,7 +146,7 @@ Thank you.`;
     payload.append("message", messageText);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 1500);
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     const response = await fetch(url, {
       method: "POST",
