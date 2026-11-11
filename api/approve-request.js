@@ -112,19 +112,23 @@ export default async function handler(req, res) {
   }
 }
 
-async function sendWhatsAppMessage(row, status, approvedAmount, adminRemarks) {
-  const secret = process.env.WHATSIFY_SECRET || "b26433c6-7cb5-4db0-8ff0-8c200d4cfb98";
-  const account = process.env.WHATSIFY_ACCOUNT || "1742193706259b3921152244c2f76a1b9270dd3b10e3d1642a";
-  const url = "https://api.whatsify.me/api/send/whatsapp";
+/**
+ * Helper to normalize Indian phone number to 91XXXXXXXXXX (without leading + or 0)
+ */
+function normalizeIndianPhone(value) {
+  let phone = String(value || '').trim().replace(/[\s()\-]/g, '').replace(/^\+/, '');
+  if (/^0[6-9]\d{9}$/.test(phone)) phone = phone.substring(1);
+  if (/^[6-9]\d{9}$/.test(phone)) return '91' + phone;
+  return /^91[6-9]\d{9}$/.test(phone) ? phone : phone;
+}
 
-  let digits = row.employee_mobile.toString().replace(/\D/g, '');
-  if (digits.length === 10) {
-    digits = '+91' + digits;
-  } else if (digits.startsWith('91') && digits.length === 12) {
-    digits = '+' + digits;
-  } else if (!digits.startsWith('+')) {
-    digits = '+91' + digits;
-  }
+async function sendWhatsAppMessage(row, status, approvedAmount, adminRemarks) {
+  const apiKey = process.env.WHATSHUB_API_KEY || "wp_live_cb4c026df1b09d6fe6c062149b55dbbd2279f8e80944bbf5";
+  const baseUrl = (process.env.WHATSHUB_API_BASE || "https://whatshub-production.up.railway.app").replace(/\/$/, "");
+  const slot = parseInt(process.env.WHATSHUB_SLOT || "1", 10);
+  const url = `${baseUrl}/api/messages/send`;
+
+  const recipient = normalizeIndianPhone(row.employee_mobile);
 
   const messageText = `*Gas Refill Request Status Update*
 
@@ -138,12 +142,19 @@ Your gas refill request has been reviewed.
 
 Thank you.`;
 
+  if (!apiKey) {
+    console.warn('WHATSHUB_API_KEY is not configured in environment variables. Skipping WhatsApp notification to employee.');
+    return 'Not Configured (Missing WHATSHUB_API_KEY)';
+  }
+
   try {
-    const payload = new URLSearchParams();
-    payload.append("secret", secret);
-    payload.append("account", account);
-    payload.append("recipient", digits);
-    payload.append("message", messageText);
+    const payload = {
+      to: recipient,
+      message: messageText,
+      type: "text",
+      provider: "qr",
+      slot: slot
+    };
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -151,32 +162,35 @@ Thank you.`;
     const response = await fetch(url, {
       method: "POST",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "X-API-Key": apiKey
       },
-      body: payload.toString(),
+      body: JSON.stringify(payload),
       signal: controller.signal
     });
 
     clearTimeout(timeoutId);
     const responseText = await response.text();
-    console.log(`Whatsify Employee Notification Response: Status ${response.status} - ${responseText}`);
+    console.log(`WhatsHub Employee Notification Response: Status ${response.status} - ${responseText}`);
 
     if (response.ok) {
-      const jsonRes = JSON.parse(responseText);
-      if (jsonRes.status === 200 || jsonRes.status === "200" || jsonRes.success === true) {
+      let jsonRes = null;
+      try { jsonRes = JSON.parse(responseText); } catch (_) {}
+      if (jsonRes && (jsonRes.success === true || jsonRes.status === 200 || jsonRes.status === "200")) {
         return 'Sent';
       } else {
-        return `Failed: ${jsonRes.message || 'Error'}`;
+        return `Failed: ${(jsonRes && (jsonRes.error || jsonRes.message)) || 'Error'}`;
       }
     } else {
       return `Failed (HTTP ${response.status})`;
     }
   } catch (err) {
     if (err.name === 'AbortError') {
-      console.warn('Whatsify employee notification timed out after 1.5s');
+      console.warn('WhatsHub employee notification timed out after 5s');
       return 'Sent (Pending background delivery)';
     }
-    console.error('Error sending Whatsify notification to employee:', err);
+    console.error('Error sending WhatsHub notification to employee:', err);
     return `Failed: ${err.message || err}`;
   }
 }
